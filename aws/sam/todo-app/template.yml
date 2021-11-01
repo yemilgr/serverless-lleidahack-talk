@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Description: >-
+  Un simple backend (read/write to DynamoDB) ejecutados por endpoint RESTful de Amazon API Gateway.
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    CodeUri: ./functions
+    Environment:
+      Variables:
+        TODO_TABLE: !Ref TodoTableParam
+
+Parameters:
+  TodoTableParam:
+    Type: String
+
+Resources:
+  PostTodoFn:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: postTodo.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodoTable
+      Events:
+        TodoApi:
+          Type: Api
+          Properties:
+            Path: /todo
+            Method: POST
+  
+  GetTodoFn:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: getTodo.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodoTable
+      Events:
+        TodoApi:
+          Type: Api
+          Properties:
+            Path: /todo
+            Method: GET
+
+  TodoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Ref TodoTableParam
+
+Outputs:
+  TodoAPI:
+    Description: "API Gateway endpoint url"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/todo/"
